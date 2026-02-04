@@ -4428,23 +4428,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sc-interactive-wallet"
-version = "0.1.0"
-dependencies = [
- "aes-gcm",
- "anyhow",
- "chrono",
- "dioxus",
- "dioxus-clipboard",
- "dirs",
- "futures-channel",
- "rand 0.9.2",
- "rfd",
- "snap-coin",
- "tokio",
-]
-
-[[package]]
 name = "schannel"
 version = "0.1.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4850,6 +4833,23 @@ dependencies = [
  "sha2",
  "sled",
  "thiserror 2.0.18",
+ "tokio",
+]
+
+[[package]]
+name = "snap-coin-interactive-wallet"
+version = "0.1.0"
+dependencies = [
+ "aes-gcm",
+ "anyhow",
+ "chrono",
+ "dioxus",
+ "dioxus-clipboard",
+ "dirs",
+ "futures-channel",
+ "rand 0.9.2",
+ "rfd",
+ "snap-coin",
  "tokio",
 ]
 
