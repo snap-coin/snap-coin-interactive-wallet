@@ -1,0 +1,356 @@
+@import "tailwindcss";
+
+/* ---------------- ROOT ---------------- */
+
+:root {
+    --bg: #0f0f0f;
+    --panel: #181818;
+    --panel-soft: #1f1f1f;
+    --border: #2a2a2a;
+    --text: #eaeaea;
+    --muted: #9ca3af;
+
+    --accent: #ff7518;
+    --accent-dark: #ff5f15;
+    --radius: 14px;
+    transition: all ease-in-out 0.3s;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+::selection {
+    background: var(--accent);
+    color: black;
+}
+
+/* ---------------- BODY ---------------- */
+
+body {
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+}
+
+//* ---------------- TYPOGRAPHY ---------------- */
+
+body {
+    font-size: 15px;
+    line-height: 1.55;
+}
+
+h1 {
+    font-size: 2rem;
+    font-weight: 700;
+}
+h2 {
+    font-size: 1.6rem;
+    font-weight: 700;
+}
+h3 {
+    font-size: 1.35rem;
+    font-weight: 600;
+}
+h4 {
+    font-size: 1.15rem;
+    font-weight: 600;
+}
+h5 {
+    font-size: 1rem;
+    font-weight: 600;
+}
+h6 {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+p {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #d1d5db;
+}
+
+small {
+    font-size: 0.8rem;
+    color: #9ca3af;
+}
+
+/* ---------------- LAYOUT ---------------- */
+
+section {
+    padding: 5rem 0;
+}
+
+.container {
+    max-width: 80rem;
+    margin-inline: auto;
+    padding-inline: 1.5rem;
+}
+
+/* ---------------- BUTTONS ---------------- */
+
+button,
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.75rem;
+    border-radius: 12px;
+    font-weight: 600;
+    background: var(--accent);
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition:
+        background 0.2s ease,
+        transform 0.15s ease,
+        box-shadow 0.2s ease;
+}
+
+button:hover,
+.button:hover {
+    background: var(--accent-dark);
+    transform: translateY(2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+}
+
+button:active,
+.button:active {
+    transform: translateY(5px);
+    box-shadow: none;
+}
+
+button.secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+}
+
+button.secondary:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(255, 117, 24, 0.05);
+}
+
+/* ---------------- INPUTS ---------------- */
+
+input,
+textarea,
+select {
+    width: 100%;
+    padding: 0.7rem 0.9rem;
+    border-radius: 10px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    outline: none;
+    transition:
+        border 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--muted);
+}
+
+input:hover,
+textarea:hover,
+select:hover {
+    border-color: var(--accent);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: var(--accent);
+    background: var(--panel-soft);
+    box-shadow: 0 0 0 3px rgba(255, 117, 24, 0.25);
+}
+
+/* ---------------- LABELS & FORMS ---------------- */
+
+label {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-weight: 500;
+    color: #d1d5db;
+}
+
+form {
+    display: grid;
+    gap: 1.25rem;
+}
+
+/* ---------------- CARDS ---------------- */
+
+.card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    transition:
+        transform 0.2s ease,
+        border 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.card:hover {
+    border-color: var(--accent);
+    transform: translateY(-4px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* ---------------- LISTS ---------------- */
+
+ul,
+ol {
+    padding-left: 1.5rem;
+    margin-bottom: 1rem;
+    color: #d1d5db;
+}
+
+ul {
+    list-style: disc;
+}
+ol {
+    list-style: decimal;
+}
+
+li {
+    margin-bottom: 0.4rem;
+}
+
+li::marker {
+    color: var(--accent);
+}
+
+/* ---------------- TABLES ---------------- */
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--panel);
+}
+
+th {
+    text-align: left;
+    padding: 1rem;
+    font-weight: 600;
+    background: #1f1f1f;
+}
+
+td {
+    padding: 1rem;
+    border-top: 1px solid #374151;
+}
+
+tr {
+    transition: background 0.15s ease;
+}
+
+tr:hover td {
+    background: rgba(255, 117, 24, 0.06);
+}
+
+/* ---------------- IMAGES ---------------- */
+
+img {
+    max-width: 100%;
+    border-radius: 12px;
+}
+
+/* ---------------- CODE ---------------- */
+
+pre {
+    background: #111;
+    padding: 1.25rem;
+    border-radius: 12px;
+    overflow-x: auto;
+    font-size: 0.875rem;
+}
+
+code {
+    color: var(--accent);
+}
+
+/* ---------------- BADGES ---------------- */
+
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    font-size: 0.875rem;
+    border-radius: 999px;
+    font-weight: 500;
+    background: rgba(255, 117, 24, 0.15);
+    color: var(--accent);
+}
+
+/* ---------------- ALERTS ---------------- */
+
+.alert {
+    padding: 1rem;
+    border-radius: 12px;
+    border: 1px solid;
+}
+
+.alert.success {
+    border-color: #22c55e;
+    color: #22c55e;
+}
+.alert.error {
+    border-color: #ef4444;
+    color: #ef4444;
+}
+.alert.info {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* ---------------- FOOTER ---------------- */
+
+footer {
+    padding: 3rem 0;
+    text-align: center;
+    color: #9ca3af;
+}
+
+/* ---------------- SCROLLBAR ---------------- */
+
+::-webkit-scrollbar {
+    width: 10px;
+}
+::-webkit-scrollbar-track {
+    background: #111;
+}
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 20px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+}
+
+.spin-fast {
+    animation: spin-fast 0.20s ease-in-out;
+}
+
+@keyframes spin-fast {
+    from {
+        transform: rotate(0deg) scale(1);
+    }
+    50% {
+        transform: rotate(45deg) scale(1.15);
+    }
+    to {
+        transform: rotate(0deg) scale(1);
+    }
+}
