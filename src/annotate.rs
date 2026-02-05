@@ -103,7 +103,7 @@ pub fn AnnotateTransaction(transaction: TransactionId) -> Element {
 
                 h4 { "Funders" }
                 div {
-                    class: "flex flex-col gap-5 w-[100dvw] divide-x divide-x-gray-600",
+                    class: "flex flex-col gap-5 w-full divide-x divide-x-gray-600",
                     for (i, input) in tx.transaction.inputs.iter().enumerate() {
                         {
                             rsx! {

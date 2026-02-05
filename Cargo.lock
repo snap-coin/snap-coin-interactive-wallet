@@ -4813,7 +4813,7 @@ dependencies = [
 
 [[package]]
 name = "snap-coin"
-version = "11.1.0"
+version = "11.2.2"
 dependencies = [
  "anyhow",
  "async-trait",

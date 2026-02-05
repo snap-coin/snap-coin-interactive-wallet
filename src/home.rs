@@ -98,7 +98,7 @@ pub fn Home() -> Element {
 
                     let mut history = vec![];
 
-                    for tx_id in tx_ids.iter().rev().take(10) {
+                    for tx_id in tx_ids.iter().take(10) {
                         let tx = client.get_transaction(tx_id).await?.expect("TX NOT FOUND");
 
                         let mut my_out = 0;
