@@ -2,7 +2,7 @@ name: Snap Coin Bundle
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -39,7 +39,7 @@ jobs:
       - name: Install Dioxus CLI
         run: cargo install dioxus-cli --locked
 
-      - name: Install Linux + RandomX deps
+      - name: Install Linux + Dioxus + RandomX deps
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
@@ -55,6 +55,7 @@ jobs:
             libwebkit2gtk-4.1-dev \
             libayatana-appindicator3-dev \
             librsvg2-dev \
+            libxdo-dev \
             patchelf
 
       - name: Set compiler for Linux
