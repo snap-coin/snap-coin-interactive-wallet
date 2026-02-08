@@ -16,7 +16,7 @@ dirs = "6.0.0"
 futures-channel = "0.3.31"
 rand = "0.9.2"
 rfd = "0.17.2"
-snap-coin = "12.0.0"
+snap-coin = "13.0.0"
 tokio = { version = "1.49.0", features = ["full"] }
 webbrowser = "1.1.0"
 
