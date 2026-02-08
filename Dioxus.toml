@@ -23,4 +23,4 @@ script = []
 [bundle]
 identifier = "com.snap-coin"
 publisher = "Snap Coin"
-icon = ["assets/logo.png"]
+icon = ["icons/icon.png"]
