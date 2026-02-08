@@ -71,7 +71,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: bundle-${{ matrix.os }}
-          path: ./target/dx/sc-interactive-wallet/bundle
+          path: ./target/dx/snap-coin-interactive-wallet/bundle/
 
   upload-all:
     name: Upload combined bundles
