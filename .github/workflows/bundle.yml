@@ -67,8 +67,25 @@ jobs:
       - name: Bundle
         run: dx bundle
 
-      - name: Upload artifact
+      - name: Upload intermediate artifact
         uses: actions/upload-artifact@v4
         with:
-          name: dioxus-${{ matrix.os }}
-          path: dist/
+          name: bundle-${{ matrix.os }}
+          path: ./target/dx/sc-interactive-wallet/bundle
+
+  upload-all:
+    name: Upload combined bundles
+    runs-on: ubuntu-latest
+    needs: desktop
+
+    steps:
+      - name: Download all bundles
+        uses: actions/download-artifact@v4
+        with:
+          path: all-bundles
+
+      - name: Upload final artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: snap-coin-bundles
+          path: all-bundles

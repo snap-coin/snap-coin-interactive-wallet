@@ -4813,9 +4813,9 @@ dependencies = [
 
 [[package]]
 name = "snap-coin"
-version = "12.0.0"
+version = "13.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9e9a962fd8bd30a0cc05127996c1da0d401d143bd338bd68b2034f76f413e150"
+checksum = "598e587654dedad3b47fa6750dd61035752933bfcac071a1c22a183603396420"
 dependencies = [
  "anyhow",
  "async-trait",
