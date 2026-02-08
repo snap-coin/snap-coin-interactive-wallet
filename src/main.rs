@@ -65,8 +65,8 @@ pub enum Route {
 
 #[derive(Clone)]
 pub struct NodeHandle {
-    node_state: SharedNodeState,
-    blockchain: SharedBlockchain,
+    _node_state: SharedNodeState,
+    _blockchain: SharedBlockchain,
     log_file: PathBuf,
 }
 

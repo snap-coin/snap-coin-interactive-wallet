@@ -4,7 +4,10 @@ use anyhow::anyhow;
 use dioxus::prelude::*;
 use snap_coin::{
     api::{api_server::Server, client::Client},
-    full_node::{auto_peer::start_auto_peer, connect_peer, create_full_node, ibd::ibd_blockchain},
+    full_node::{
+        auto_peer::start_auto_peer, auto_reconnect::start_auto_reconnect, connect_peer,
+        create_full_node, ibd::ibd_blockchain,
+    },
 };
 use tokio::{net::lookup_host, time::sleep};
 
@@ -86,11 +89,13 @@ pub fn Connection() -> Element {
 
                                         let (blockchain, node_state) = create_full_node(&node_path, false);
 
-                                        for peer in peers.split(",") {
+                                        let mut resolved_peers = vec![];
+                                        for peer in peers.replace(" ", "").split(",") {
                                             let peer = lookup_host(peer)
                                                 .await?
                                                 .next()
                                                 .ok_or(anyhow!("Could not resolve {}", peer))?;
+                                            resolved_peers.push(peer);
 
                                             connect_peer(peer, &blockchain, &node_state).await?;
                                         }
@@ -100,8 +105,8 @@ pub fn Connection() -> Element {
                                         let log = latest_log_file(&node_path).unwrap_or("".parse().unwrap());
 
                                         let handle = NodeHandle {
-                                            node_state: node_state.clone(),
-                                            blockchain: blockchain.clone(),
+                                            _node_state: node_state.clone(),
+                                            _blockchain: blockchain.clone(),
                                             log_file: log,
                                         };
 
@@ -116,25 +121,19 @@ pub fn Connection() -> Element {
                                             let _ = tx.send(Ok((handle, port)));
                                         }
 
-                                        // ---- RUN IBD INLINE ----
-                                        *node_state.is_syncing.write().await = true;
+                                        if resolved_peers.len() > 0 {
+                                            // ---- RUN IBD AND AUTO RECONNECT ----
+                                            *node_state.is_syncing.write().await = true;
 
-                                        sleep(Duration::from_secs(2)).await;
+                                            sleep(Duration::from_secs(2)).await;
 
-                                        let peer = node_state
-                                            .connected_peers
-                                            .read()
-                                            .await
-                                            .iter()
-                                            .next()
-                                            .ok_or(anyhow!("No peers"))?
-                                            .1
-                                            .clone();
+                                            let _ = start_auto_reconnect(node_state.clone(), blockchain.clone(), resolved_peers, false);
 
-                                        println!("IBD status: {:?}", ibd_blockchain(peer, blockchain, false).await);
-                                        let _ = synced_tx.send(());
+                                            println!("IBD status: {:?}", ibd_blockchain(node_state.clone(), blockchain, false).await);
+                                            let _ = synced_tx.send(());
 
-                                        *node_state.is_syncing.write().await = false;
+                                            *node_state.is_syncing.write().await = false;
+                                        }
 
                                         // ---- KEEP NODE ALIVE ----
                                         auto_peer.await?;

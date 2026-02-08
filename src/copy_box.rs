@@ -9,6 +9,7 @@ pub fn CopyBox(
     #[props(into)] text: String,
     #[props(optional)] class: String,
     #[props(optional)] title: String,
+    #[props(optional)] onclick: EventHandler<MouseEvent>,
 ) -> Element {
     let mut copied = use_signal(|| false);
     let mut rotating = use_signal(|| false);
@@ -17,6 +18,7 @@ pub fn CopyBox(
         span {
             title,
             class: "font-mono font-light border border-gray-600 p-2 break-all flex items-center gap-2 justify-between rounded-md min-w-0 {class}",
+            onclick,
 
             span {
                 class: "truncate overflow-x-clip min-w-0 flex-1",

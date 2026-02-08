@@ -32,6 +32,14 @@ pub fn Authorize() -> Element {
         let mut pin = pin.clone();
         let mut error = error.clone();
         move || {
+            if let Some(tx) = ctx.write().auth_tx.take() {
+                if let Ok(mut lock) = tx.try_lock() {
+                    if let Some(tx) = lock.take() {
+                        let _ = tx.send(false);
+                    }
+                }
+            }
+
             ctx.write().show_auth = false;
             pin.set(String::new());
             error.set(String::new());

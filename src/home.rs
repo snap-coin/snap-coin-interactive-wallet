@@ -4,16 +4,18 @@ use anyhow::anyhow;
 use chrono::{Local, TimeZone};
 use dioxus::prelude::*;
 use snap_coin::{
-    blockchain_data_provider::BlockchainDataProviderError,
+    blockchain_data_provider::{BlockchainDataProvider, BlockchainDataProviderError},
     build_transaction,
-    core::transaction::TransactionId,
+    core::transaction::{TransactionId, MAX_TRANSACTION_IO},
     crypto::keys::{Private, Public},
     economics::DEV_WALLET,
-    to_nano, to_snap,
+    to_nano, to_snap, UtilError,
 };
 use tokio::time::sleep;
 
-use crate::{annotate::AnnotateTransaction, copy_box::CopyBox, GlobalContext, Route};
+use crate::{
+    annotate::AnnotateTransaction, authorize::ask_for_auth, copy_box::CopyBox, GlobalContext, Route,
+};
 
 const REFRESH: Asset = asset!("../assets/refresh.svg");
 const FILE_CHECK: Asset = asset!("../assets/file_check.svg");
@@ -142,7 +144,7 @@ pub fn Home() -> Element {
                     error.set(e.to_string());
                 }
 
-                for _ in 0..20 {
+                for _ in 0..10 {
                     sleep(Duration::from_secs(1)).await;
                     if need_refresh() {
                         need_refresh.set(false);
@@ -198,7 +200,7 @@ pub fn Home() -> Element {
                     div {
                         class: "bg-neutral-900 rounded-xl p-6 shadow",
                         p { class: "text-sm text-neutral-400", "Balance" }
-                        h2 { class: "text-3xl font-bold mt-2", "{balance_snap} SNAP" }
+                        h2 { class: "text-3xl font-bold mt-2 font-mono", "{balance_snap} SNAP" }
                     }
 
                     // ---------------- SEND PANEL ----------------
@@ -220,7 +222,7 @@ pub fn Home() -> Element {
                                     }
 
                                     input {
-                                        class: "bg-neutral-800 p-2 rounded w-full",
+                                        class: "bg-neutral-800 p-2 rounded w-full font-mono font-bold",
                                         type: "number",
                                         placeholder: "Amount",
                                         value: "{amt}",
@@ -265,25 +267,70 @@ pub fn Home() -> Element {
                                     tx_status.set("".to_string());
                                     is_sending.set(true);
 
+                                    let client_clone = client.clone();
                                     if let Err(e) = async move {
+                                        if !ask_for_auth().await {
+                                            return Err(anyhow!("Unauthorized"));
+                                        }
+
                                         let mut receivers = vec![];
                                         for (r, a) in recipients() {
                                             receivers.push((Public::new_from_base36(&r).ok_or(anyhow!("Invalid receiver address"))?, to_nano(a.parse().map_err(|_| anyhow!("Invalid amount"))?)));
                                         }
                                         let mut ignore_inputs = ignore_inputs.write();
                                         tx_status.set("Building transaction...".to_string());
-                                        let mut tx = build_transaction(&*client, private(), receivers, &*ignore_inputs).await?;
+                                        let mut tx = build_transaction(&*client_clone, private(), receivers, &*ignore_inputs).await?;
                                         let used_inputs = tx.inputs.clone();
                                         tx_status.set("Computing transaction PoW...".to_string());
-                                        tx.compute_pow(&client.get_live_transaction_difficulty().await?, Some(0.2f64))?;
+                                        tx.compute_pow(&client_clone.get_live_transaction_difficulty().await?, Some(0.2f64))?;
                                         tx_status.set("Submitting transaction...".to_string());
-                                        client.submit_transaction(tx).await??;
+                                        client_clone.submit_transaction(tx).await??;
                                         ignore_inputs.extend(used_inputs);
 
                                         Ok::<(), anyhow::Error>(())
                                     }.await {
-                                        tx_status.set(format!("{}", e));
+                                        if let Some(UtilError::TooMuchIO) = e.downcast_ref::<UtilError>() {
+                                            if let Err(e) = async move {
+                                                let available = client
+                                                    .get_available_transaction_outputs(private().to_public())
+                                                    .await?;
+                                                let mut part_count = 0;
+                                                for part in available.chunks(MAX_TRANSACTION_IO - 1) {
+                                                    let amount = part.iter().fold(0, |acc, part| part.1.amount + acc);
+                                                    let mut tx = build_transaction(
+                                                        &*client,
+                                                        private(),
+                                                        vec![(private().to_public(), amount)],
+                                                        &ignore_inputs.write(),
+                                                    )
+                                                    .await?;
+                                                    tx_status.set("Computing Proof Of Work for transaction".to_string());
+                                                    tx.compute_pow(&client.get_transaction_difficulty().await?, Some(0.1))?;
+                                                    tx_status.set(
+                                                        format!("Built transaction: {}",
+                                                        tx.transaction_id.unwrap().dump_base36())
+                                                    );
+
+                                                    tx_status.set("Submitting transaction...".to_string());
+
+                                                    let used_inputs = tx.inputs.clone();
+                                                    client.submit_transaction(tx).await??;
+                                                    ignore_inputs.write().extend_from_slice(&used_inputs);
+
+                                                    part_count += 1;
+                                                }
+
+                                                tx_status.set(format!("Merged into: {} UTXOs, please re-submit transaction, after merge transactions are confirmed", part_count));
+
+                                                Ok::<(), anyhow::Error>(())
+                                            }.await {
+                                                tx_status.set(format!("Failed to merge UTXOs: {}", e));
+                                            }
+                                        } else {
+                                            tx_status.set(format!("{}", e));
+                                        }
                                     } else {
+                                        recipients.set(vec![(String::new(), String::new())]);
                                         tx_status.set("Transaction submitted".to_string());
                                     }
 
@@ -324,6 +371,9 @@ pub fn Home() -> Element {
                                 let amount_text = format!("{sign}{:.4}", tx.amount_snap);
 
                                 let tx_id = tx.tx.clone();
+                                let tx_id_clone = tx.tx.clone();
+                                let sender_main_clone = sender_main.clone();
+                                let receiver_main_clone = receiver_main.clone();
 
                                 rsx! {
                                     div {
@@ -335,7 +385,13 @@ pub fn Home() -> Element {
                                             span { class: "text-neutral-500 text-xs whitespace-nowrap text-right", "{tx.when.clone()}" }
                                             div {
                                                 class: "flex items-center gap-2 min-w-0",
-                                                CopyBox { class: "w-full min-w-0", text: tx.tx.dump_base36(), title: "Transaction ID" }
+                                                p {
+                                                    class: "text-nowrap",
+                                                    "Transaction ID"
+                                                }
+                                                CopyBox { onclick: move |_| {
+                                                    let _ = webbrowser::open(&("https://explorer.snap-coin.net/tx/".to_string() + &tx_id_clone.dump_base36()));
+                                                }, class: "w-full min-w-0", text: tx_id_clone.dump_base36(), title: "Transaction ID" }
                                                 img {
                                                     src: FILE_CHECK,
                                                     class: "rounded-none! cursor-pointer invert".to_string() + if need_refresh() { " spin-fast" } else { "" },
@@ -347,14 +403,18 @@ pub fn Home() -> Element {
                                         span { class: "text-neutral-500 text-xs self-center", "From" }
                                         div {
                                             class: "flex items-center gap-2 min-w-0",
-                                            CopyBox { class: "w-full min-w-0", text: sender_main.clone(), title: "Sender" }
+                                            CopyBox { onclick: move |_| {
+                                                let _ = webbrowser::open(&("https://explorer.snap-coin.net/wallet/".to_string() + &sender_main));
+                                            }, class: "w-full min-w-0", text: sender_main_clone, title: "Sender" }
                                             if sender_more > 0 { span { class: "text-neutral-500 shrink-0", "+{sender_more}" } }
                                         }
 
                                         span { class: "text-neutral-500 text-xs self-center", "To" }
                                         div {
                                             class: "flex items-center gap-2 min-w-0",
-                                            CopyBox { class: "w-full min-w-0", text: receiver_main.clone(), title: "Receiver" }
+                                            CopyBox { onclick: move |_| {
+                                                let _ = webbrowser::open(&("https://explorer.snap-coin.net/wallet/".to_string() + &receiver_main));
+                                            }, class: "w-full min-w-0", text: receiver_main_clone, title: "Receiver" }
                                             if receiver_more > 0 { span { class: "text-neutral-500 shrink-0", "+{receiver_more}" } }
                                         }
                                     }

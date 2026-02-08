@@ -1,3 +1,4 @@
+use chrono::TimeZone;
 use dioxus::prelude::*;
 use rfd::FileDialog;
 use snap_coin::{core::transaction::TransactionId, crypto::Signature, to_snap};
@@ -170,7 +171,7 @@ pub fn AnnotateTransaction(transaction: TransactionId) -> Element {
                 h4 { "Annotate sign, and export" }
                 button {
                     onclick: move |_| {
-                        let header = format!("Transaction Confirmation\n\n{title}\n{description}\n\nNetwork Information\nTransaction ID: {}\nIncluded in block: #{}: {}\n\nFunders\n", transaction.dump_base36(), tx.at_height, tx.in_block.dump_base36());
+                        let header = format!("Transaction Confirmation\n\n{title}\n{description}\n\nNetwork Information\nTransaction ID: {}\nTime: {}\nIncluded in block: #{}: {}\n\nFunders\n", transaction.dump_base36(), chrono::Local.timestamp_opt(tx.transaction.timestamp as i64, 0).unwrap().format("%A, %b %d %Y %I:%M %p %Z"), tx.at_height, tx.in_block.dump_base36());
 
                         let mut funders = String::new();
 

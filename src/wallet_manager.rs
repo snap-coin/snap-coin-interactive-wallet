@@ -1,6 +1,7 @@
 use crate::{authorize::ask_for_auth, copy_box::CopyBox, save_wallets, GlobalContext};
 use dioxus::prelude::*;
 use snap_coin::crypto::keys::Private;
+use tokio::time::{sleep, Duration};
 
 const WRITE_ICON: Asset = asset!("../assets/write.svg");
 const PRIVATE_ICON: Asset = asset!("../assets/private.svg");
@@ -18,10 +19,64 @@ pub fn WalletManager() -> Element {
     let mut new_wallet_private = use_signal(|| "".to_string());
     let mut new_wallet_error = use_signal(|| "".to_string());
 
+    // ✅ added
+    let mut show_backup_popup = use_signal(|| false);
+    let mut backup_countdown = use_signal(|| 10i32);
+
     rsx! {
         div {
             class: "p-5",
             h1 { "Wallet Manager" }
+
+            // ✅ BACKUP POPUP
+            if show_backup_popup() {
+                div {
+                    class: "fixed inset-0 bg-black/70 flex items-center justify-center z-50",
+
+                    div {
+                        class: "bg-[var(--panel-soft)] p-6 rounded-xl max-w-md w-full flex flex-col gap-4",
+
+                        h2 { "Backup Your Private Key" }
+
+                        p {
+                            "This private key gives full access to your wallet.
+                            If you lose it, your funds are permanently lost."
+                        }
+
+                        p { "Save it somewhere secure, offline, before continuing." }
+
+                        div {
+                            class: "font-mono p-3 bg-black rounded break-all border",
+                            "{new_wallet_private()}"
+                        }
+
+                        button {
+                            disabled: backup_countdown() > 0,
+                            class: "w-full",
+
+                            onclick: move |_| {
+                                let private = Private::new_from_base36(&new_wallet_private()).unwrap();
+
+                                global_state.write().wallets.insert(new_wallet_name(), private);
+                                save_wallets(&global_state().wallets, &global_state().pin).unwrap();
+
+                                new_wallet_name.set("".to_string());
+                                new_wallet_private.set("".to_string());
+                                creating_wallet.set(false);
+                                show_backup_popup.set(false);
+                            },
+
+                            {
+                                if backup_countdown() > 0 {
+                                    format!("I saved it ({})", backup_countdown())
+                                } else {
+                                    "I saved it".to_string()
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
             div {
                 class: "flex flex-col items-center w-full p-5",
@@ -58,7 +113,6 @@ pub fn WalletManager() -> Element {
                                                         let mut new_name = edit_value();
                                                         new_name = new_name.trim().to_string();
 
-                                                        // Prevent empty or duplicate names
                                                         let can_rename = global_state.with(|g| {
                                                             !new_name.is_empty()
                                                                 && (!g.wallets.contains_key(&new_name) || new_name == wallet)
@@ -79,7 +133,6 @@ pub fn WalletManager() -> Element {
                                                         }
                                                     }
                                                 },
-
 
                                                 onblur: move |_| {
                                                     editing_wallet.set(None);
@@ -195,20 +248,21 @@ pub fn WalletManager() -> Element {
                                 button {
                                     class: "w-full text-center",
                                     onclick: move |_| {
-                                        let private = if let Some(private) = Private::new_from_base36(&new_wallet_private()) { private } else {
-                                            new_wallet_error.set("Please enter a valid private key".to_string());
-                                            return;
-                                        };
                                         if global_state().wallets.get(&new_wallet_name()).is_some() || new_wallet_name() == "".to_string() {
                                             new_wallet_error.set("Please choose a different wallet name".to_string());
                                             return;
                                         }
+
                                         new_wallet_error.set("".to_string());
-                                        global_state.write().wallets.insert(new_wallet_name(), private);
-                                        save_wallets(&global_state().wallets, &global_state().pin).unwrap();
-                                        new_wallet_name.set("".to_string());
-                                        new_wallet_private.set("".to_string());
-                                        creating_wallet.set(false);
+                                        show_backup_popup.set(true);
+                                        backup_countdown.set(10);
+
+                                        spawn(async move {
+                                            for i in (0..10).rev() {
+                                                sleep(Duration::from_secs(1)).await;
+                                                backup_countdown.set(i);
+                                            }
+                                        });
                                     },
                                     "Create"
                                 }
