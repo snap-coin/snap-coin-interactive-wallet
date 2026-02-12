@@ -7,6 +7,8 @@ title = "Snap Coin Wallet"
 
 # include `assets` in web platform
 [web.resource]
+# Assets to include in web builds
+assets = "assets"
 
 # Additional CSS style files
 style = []
@@ -24,3 +26,4 @@ script = []
 identifier = "com.snap-coin"
 publisher = "Snap Coin"
 icon = ["icons/icon.png"]
+resources = ["assets/"]
