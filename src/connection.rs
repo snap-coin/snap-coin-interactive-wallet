@@ -13,11 +13,6 @@ use tokio::{net::lookup_host, time::sleep};
 
 use crate::{node_log::NodeLog, GlobalContext, NodeHandle, Route};
 
-fn latest_log_file(node_path: &str) -> Option<PathBuf> {
-    let logs_dir = format!("{}/logs", node_path);
-    Some(fs::read_dir(&logs_dir).ok()?.next()?.ok()?.path())
-}
-
 #[component]
 pub fn Connection() -> Element {
     let mut status = use_signal(|| "".to_string());
@@ -87,7 +82,7 @@ pub fn Connection() -> Element {
                                             fs::create_dir_all(node_path.clone() + "/logs/")?;
                                         }
 
-                                        let (blockchain, node_state) = create_full_node(&node_path, false);
+                                        let (blockchain, node_state, log_file) = create_full_node(&node_path, false, None);
 
                                         let mut resolved_peers = vec![];
                                         for peer in peers.replace(" ", "").split(",") {
@@ -102,12 +97,10 @@ pub fn Connection() -> Element {
 
                                         let auto_peer = start_auto_peer(node_state.clone(), blockchain.clone(), vec![]);
 
-                                        let log = latest_log_file(&node_path).unwrap_or("".parse().unwrap());
-
                                         let handle = NodeHandle {
                                             _node_state: node_state.clone(),
                                             _blockchain: blockchain.clone(),
-                                            log_file: log,
+                                            log_file,
                                         };
 
                                         let port = rand::random::<u16>();
@@ -127,9 +120,9 @@ pub fn Connection() -> Element {
 
                                             sleep(Duration::from_secs(2)).await;
 
-                                            let _ = start_auto_reconnect(node_state.clone(), blockchain.clone(), resolved_peers, false);
+                                            let _ = start_auto_reconnect(node_state.clone(), blockchain.clone(), resolved_peers, false, std::thread::available_parallelism().unwrap().get());
 
-                                            println!("IBD status: {:?}", ibd_blockchain(node_state.clone(), blockchain, false).await);
+                                            println!("IBD status: {:?}", ibd_blockchain(node_state.clone(), blockchain, false, std::thread::available_parallelism().unwrap().get()).await);
                                             let _ = synced_tx.send(());
 
                                             *node_state.is_syncing.write().await = false;
